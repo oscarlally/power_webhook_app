@@ -60,10 +60,12 @@ def authorize():
 @app.route("/oauth2callback")
 def oauth2callback():
     try:
+        # Verify state parameter
         state = session.get("state")
         if not state:
             return jsonify({"status": "error", "message": "Missing state parameter"}), 400
         
+        # Recreate Flow with the same redirect URI and state
         flow = Flow.from_client_secrets_file(
             CLIENT_SECRETS_FILE,
             scopes=SCOPES,
@@ -71,7 +73,27 @@ def oauth2callback():
             redirect_uri=REDIRECT_URI
         )
         
+        # Get the full redirect URL Google sent
         authorization_response = request.url
+        
+        # Force HTTPS if Google redirected via HTTP
+        if authorization_response.startswith("http://") and REDIRECT_URI.startswith("https://"):
+            authorization_response = authorization_response.replace("http://", "https://", 1)
+        
+        # Remove accidental spaces in scope parameter (if any)
+        if "scope=" in authorization_response:
+            parts = authorization_response.split("scope=")
+            before_scope = parts[0]
+            scope_value = parts[1].split("&")[0].replace(" ", "%20")
+            after_scope = "&".join(parts[1].split("&")[1:])
+            if after_scope:
+                authorization_response = f"{before_scope}scope={scope_value}&{after_scope}"
+            else:
+                authorization_response = f"{before_scope}scope={scope_value}"
+        
+        print(f"Fetching token with URL: {authorization_response}")  # Debug
+        
+        # Exchange code for token
         flow.fetch_token(authorization_response=authorization_response)
         creds = flow.credentials
         
@@ -90,6 +112,7 @@ def oauth2callback():
     except Exception as e:
         print(f"OAuth callback error: {str(e)}")
         return jsonify({"status": "error", "message": f"OAuth callback error: {str(e)}"}), 400
+
 
 def get_drive_service():
     if not os.path.exists(TOKEN_FILE):
