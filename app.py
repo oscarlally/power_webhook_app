@@ -16,7 +16,11 @@ os.makedirs(LOCAL_DATA_FOLDER, exist_ok=True)
 
 CLIENT_SECRETS_FILE = "web_client_secret.json"
 TOKEN_FILE = os.environ.get("GOOGLE_OAUTH_TOKEN_FILE", "/tmp/token.json")
-SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+SCOPES = [
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/drive.file"
+]
+
 FOLDER_ID = "1uun13tmNf1b7RvixKku9jIQ8pu8Zncaq"
 
 # Hardcoded redirect URI registered in Google Cloud
