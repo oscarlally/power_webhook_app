@@ -12,24 +12,35 @@ app = Flask(__name__)
 FOLDER_ID = "1uun13tmNf1b7RvixKku9jIQ8pu8Zncaq"  # Replace with your Drive folder ID
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 
-# ===== WRITE SERVICE ACCOUNT SECRET TO FILE =====
-service_account_path = "service_account.json"
-
+# ===== Check for Service Account Secret =====
 if "SERVICE_ACCOUNT_JSON" not in os.environ:
-    raise ValueError("SERVICE_ACCOUNT_JSON secret not found in environment!")
+    # Clear message and stop app if secret missing
+    raise ValueError(
+        "SERVICE_ACCOUNT_JSON secret not found in environment! "
+        "Make sure you added it in Render Environment variables."
+    )
 
-with open(service_account_path, "w") as f:
-    f.write(os.environ["SERVICE_ACCOUNT_JSON"])
+# ===== Write Secret to File =====
+service_account_path = "service_account.json"
+try:
+    with open(service_account_path, "w") as f:
+        f.write(os.environ["SERVICE_ACCOUNT_JSON"])
+except Exception as e:
+    raise RuntimeError(f"Failed to write service account file: {e}")
 
-# ===== Google Drive Service =====
-credentials = service_account.Credentials.from_service_account_file(
-    service_account_path, scopes=SCOPES
-)
-drive_service = build("drive", "v3", credentials=credentials)
+# ===== Initialize Google Drive Service =====
+try:
+    credentials = service_account.Credentials.from_service_account_file(
+        service_account_path, scopes=SCOPES
+    )
+    drive_service = build("drive", "v3", credentials=credentials)
+except Exception as e:
+    raise RuntimeError(f"Failed to initialize Google Drive service: {e}")
 
 # ===== Ensure local data folder exists =====
-if not os.path.exists("data"):
-    os.makedirs("data")
+LOCAL_DATA_FOLDER = "data"
+if not os.path.exists(LOCAL_DATA_FOLDER):
+    os.makedirs(LOCAL_DATA_FOLDER)
 
 # ===== Routes =====
 @app.route("/upload-json", methods=["POST"])
@@ -38,13 +49,13 @@ def upload_json():
         data = request.get_json(force=True)
 
         # Save locally first
-        filename = f"data/data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        filename = f"{LOCAL_DATA_FOLDER}/data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         with open(filename, "w") as f:
             json.dump(data, f, indent=4)
 
         # Upload to Google Drive
         file_metadata = {
-            "name": filename,
+            "name": os.path.basename(filename),
             "parents": [FOLDER_ID],
             "mimeType": "application/json"
         }
@@ -69,7 +80,10 @@ def upload_json():
 def home():
     return "Flask JSON → Google Drive (Render) 🚀", 200
 
-# ===== Run app =====
+
+# ===== Run App =====
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
+    print(f"Starting Flask app on 0.0.0.0:{port}...")
+    print(f"SERVICE_ACCOUNT_JSON exists: {'SERVICE_ACCOUNT_JSON' in os.environ}")
     app.run(host="0.0.0.0", port=port)
