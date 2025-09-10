@@ -12,21 +12,18 @@ app = Flask(__name__)
 FOLDER_ID = "1AbCDefGhIJklMnOpQrsTuvWxYZ12345"  # Replace with your Drive folder ID
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 
-# ===== Check for Service Account Secret =====
-if "SERVICE_ACCOUNT_JSON" not in os.environ:
-    # Clear message and stop app if secret missing
-    raise ValueError(
-        "SERVICE_ACCOUNT_JSON secret not found in environment! "
-        "Make sure you added it in Render Environment variables."
-    )
+SECRET_FILE_PATH = "/etc/secrets/service_account.json"
 
-# ===== Write Secret to File =====
+if not os.path.exists(SECRET_FILE_PATH):
+    raise ValueError(f"Secret file not found at {SECRET_FILE_PATH}")
+
 service_account_path = "service_account.json"
-try:
-    with open(service_account_path, "w") as f:
-        f.write(os.environ["SERVICE_ACCOUNT_JSON"])
-except Exception as e:
-    raise RuntimeError(f"Failed to write service account file: {e}")
+
+# Copy secret file to working directory
+with open(SECRET_FILE_PATH, "r") as src:
+    with open(service_account_path, "w") as dst:
+        dst.write(src.read())
+
 
 # ===== Initialize Google Drive Service =====
 try:
