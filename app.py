@@ -14,7 +14,7 @@ LOCAL_DATA_FOLDER = "/tmp/data"
 os.makedirs(LOCAL_DATA_FOLDER, exist_ok=True)
 
 # Use the secret files directly from Render
-CLIENT_SECRETS_FILE = "credentials.json"  # This file already exists in Render
+CLIENT_SECRETS_FILE = "web_client_secret.json"  # This file already exists in Render
 TOKEN_FILE = os.environ.get("GOOGLE_OAUTH_TOKEN_FILE", "/tmp/token.json")
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 REDIRECT_URI = "/oauth2callback"
