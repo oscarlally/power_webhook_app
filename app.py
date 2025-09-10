@@ -9,7 +9,7 @@ from google.oauth2 import service_account
 app = Flask(__name__)
 
 # ===== CONFIG =====
-FOLDER_ID = "1uun13tmNf1b7RvixKku9jIQ8pu8Zncaq"  # Replace with your Drive folder ID
+FOLDER_ID = "1AbCDefGhIJklMnOpQrsTuvWxYZ12345"  # Replace with your Drive folder ID
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 
 # ===== Check for Service Account Secret =====
