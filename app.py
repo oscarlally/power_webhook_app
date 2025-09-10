@@ -10,13 +10,16 @@ app = Flask(__name__)
 app.secret_key = os.environ["FLASK_SECRET_KEY"]
 
 # ===== Config =====
-LOCAL_DATA_FOLDER = "data"
+LOCAL_DATA_FOLDER = "/tmp/data"
 os.makedirs(LOCAL_DATA_FOLDER, exist_ok=True)
 
 CLIENT_SECRETS_FILE = "credentials.json"
-TOKEN_FILE = os.environ.get("GOOGLE_OAUTH_TOKEN_FILE", "token.json")
+TOKEN_FILE = os.environ.get("GOOGLE_OAUTH_TOKEN_FILE", "/tmp/token.json")
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 REDIRECT_URI = "/oauth2callback"
+
+# Drive folder ID where JSON files will be uploaded
+FOLDER_ID = "1uun13tmNf1b7RvixKku9jIQ8pu8Zncaq"
 
 # ===== Write OAuth client secret to file =====
 with open(CLIENT_SECRETS_FILE, "w") as f:
@@ -85,8 +88,11 @@ def upload_json():
         with open(filename, "w") as f:
             json.dump(data, f, indent=4)
 
-        # Upload to My Drive
-        file_metadata = {"name": os.path.basename(filename)}
+        # Upload to specified Drive folder
+        file_metadata = {
+            "name": os.path.basename(filename),
+            "parents": [FOLDER_ID]
+        }
         media = MediaFileUpload(filename, mimetype="application/json")
         uploaded = drive_service.files().create(
             body=file_metadata, media_body=media, fields="id"
